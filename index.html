@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TonConnectUI</title>
+    <style>
+        button {
+            margin: 10px;
+            background-color: rgb(130, 130, 238);
+            color: white;
+            height: 52px;
+            width: 800px;
+            font-size: 16px;
+            padding: 10px;
+        }
+        label {
+            display: inline-block;
+            margin: 10px;
+            color: rgb(12, 75, 235);
+            font-size: 24px;
+            font-weight: 1000;
+            height: 44px;
+            align-content: center;
+            text-align: left;
+            padding: 10px;
+            width: 120px;
+            /* background-color: aqua; */
+        }
+        input {
+            padding-left: 10px;
+            height: 44px;
+            width: 660px;
+            font-size: 20px;
+        }
+    </style>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+
+</head>
+<body>
+    <div class="header">
+        <div>
+            <label>payload</label>
+            <input id="payload" placeholder="填写钱包请求返回的 payload，必填" value=""/>
+            <br />
+            <label>contract</label>
+            <input id="contract" placeholder="填写 checkIn 合约地址或收币地址钱包地址，TON 转账不关心" value="" />
+            <br />
+            <label>amount</label>
+            <input id="amount" placeholder="填写 Token 或 TON 金额全精度" value="" />
+            <Button style="visibility: hidden;" id="tonconnnect"></Button>
+            <br />
+            <label>destination</label>
+            <input id="destination" placeholder="填写转账 TON 收币地址" value="" />
+            <Button style="visibility: hidden;" id="tonconnnect"></Button>
+            <br />
+        </div>
+        <div class="operate">
+            <!-- <img id="icon" width="44px" src="images/connected.png", alt="链接状态"> -->
+            <Button id="logo" onclick="refresh()">Status</Button>
+            <br />
+            <Button onclick="connect()">Connect</Button>
+            <br />
+            <Button onclick="disconnect()">Disconnect</Button>
+            <br />
+            <Button onclick="checkIn()">CheckIn Transaction</Button>
+            <br />
+            <Button onclick="depositTon()">Deposit Ton Transaction</Button>
+            <br />
+            <Button onclick="depositUSDT()">Deposit Token Transaction</Button>
+            <br />
+            <br />
+            <label style="color: rgba(219, 218, 218); font-size: large;">Builtin 0QAI7h2TYdDzUDPYR4920Ih2rzSkP283O3EHsUtc8gGcVtnq</label>
+            <br />
+            <label style="color: rgba(219, 218, 218); font-size: large;">TCC kQCRUF_d9aCWRn2BooQK6lwI_2QW6m7EHCWNEFcSAEyuUhVn</label>
+        </div>
+    </div>
+   
+    <label style="color: rgb(52, 50, 50); font-size:large; font-weight: 200; width: 1000px; height: auto;" id="status"></label>
+    <br />
+    <label style="color: black; font-size:large; font-weight: 200; width: 1000px; height: auto;" id="transaction"></label>
+    <script>
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://raw.githubusercontent.com/linruigongzi/client/client_pages/tonconnect-manifest.json',
+            buttonRootId: 'tonconnnect'
+        })
+
+        setTimeout(() => {
+            refresh();
+        }, 1000); 
+
+        // const unsubscribe = tonConnectUI.onStateChange(state => {
+        //     document.getElementById("status").innerText = `status: ${tonConnectUI.modalState.status}    closeReason: ${tonConnectUI.modalState.closeReason}`;
+        // })
+        // unsubscribe();
+
+        function refresh() {
+
+            if (tonConnectUI === null) return;
+
+            const currentWallet = tonConnectUI.wallet;
+            const currentWalletInfo = tonConnectUI.walletInfo;
+            const currentAccount = tonConnectUI.account
+            const currentIsConnectedStatus = tonConnectUI.connected;
+            const modalState = tonConnectUI.modalState;
+            console.log(currentIsConnectedStatus);
+
+            var info = `connectedStatus: ${currentIsConnectedStatus}`
+            if (typeof currentWalletInfo !== "undefined") {
+                info += `\n\nwalletInfo: ${currentWalletInfo.name}`;
+            } else {
+                console.log(typeof walletInfo);
+            }
+            if (typeof currentAccount !== "undefined") {
+                info += `\n\naccount: ${currentAccount.address}`;
+            }
+            // if (typeof currentWallet !== "undefined" && currentWallet !== null) {
+            //     info += `\n\ndevice: ${JSON.stringify(currentWallet.device)}`;
+            // }  
+            // if (typeof currentWalletInfo !== "undefined") {
+            //     info += `\n\nwalletInfo: ${JSON.stringify(currentWalletInfo)}`;
+            // } else {
+            //     console.log(typeof walletInfo);
+            // }
+            // if (typeof currentAccount !== "undefined") {
+            //     info += `\n\naccount: ${JSON.stringify(currentAccount)}`;
+            // }
+            if (typeof modalState !== "undefined") {
+                info += `\n\nmodalState: ${JSON.stringify(modalState)}`;
+            }          
+
+            document.getElementById("status").innerText = info;
+
+        }
+
+        async function connect() {
+            try {
+                await tonConnectUI.openModal();
+                console.log("connect");
+                refresh();
+            } catch(errror) {
+                console.log("Error: ", error);
+            }
+
+        }
+
+        async function disconnect() {
+            try {
+                await tonConnectUI.disconnect();
+                console.log("disconnected");
+                refresh();
+            } catch(error) {
+                console.error("Error: ", error);
+            }
+        }
+
+        async function checkIn() {
+            const contract = document.getElementById("contract").value;
+            const body = document.getElementById("payload").value;
+
+            console.log(contract);
+            console.log(body);
+
+            try {
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 3660, // 60 sec
+                    messages: [
+                        {
+                            address: contract,
+                            amount: 8000000,
+                            payload: body
+                        }
+                    ]
+                }
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+
+                document.getElementById("transaction").innerText = JSON.stringify(result) + "\n" + transaction.validUntil;
+                console.log("sendTransaction", result);
+                // you can use signed boc to find the transaction 
+                // const someTxData = await myAppExplorerService.getTransaction(result.boc);
+                alert('Transaction was sent successfully', someTxData);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function depositTon() {
+            const destination = document.getElementById("destination").value;
+            const body = document.getElementById("payload").value;
+            const amount = document.getElementById("amount").value
+            
+            console.log(destination);
+            console.log(amount)
+            console.log(body);
+
+            try {
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 3660, // 60 sec
+                    messages: [
+                        {
+                            address: destination,
+                            amount: amount,
+                            payload: body
+                        }
+                    ]
+                }
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+
+                document.getElementById("transaction").innerText = JSON.stringify(result) + "\n" + transaction.validUntil;
+                console.log("sendTransaction", result);
+                // you can use signed boc to find the transaction 
+                // const someTxData = await myAppExplorerService.getTransaction(result.boc);
+                alert('Transaction was sent successfully', someTxData);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function depositUSDT() {
+            const contract = document.getElementById("contract").value;
+            const body = document.getElementById("payload").value;
+
+            console.log(contract);
+            console.log(body);
+
+            try {
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 3660, // 60 sec
+                    messages: [
+                        {
+                            address: contract,
+                            amount: 100000000,
+                            payload: body
+                        }
+                    ]
+                }
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+
+                document.getElementById("transaction").innerText = JSON.stringify(result) + "\n" + transaction.validUntil;
+                console.log("sendTransaction", result);
+                // you can use signed boc to find the transaction 
+                // const someTxData = await myAppExplorerService.getTransaction(result.boc);
+                alert('Transaction was sent successfully', someTxData);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+    </script>
+</body>
+</html>
